@@ -1,0 +1,99 @@
+---
+title: "Subjective Analysis"
+author: Trent Simmons
+output: html_document
+---
+
+# Install and Load Packages into R
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(stringr)
+library(data.table)
+library(readr)
+library(lme4)
+library(apaTables)
+library(ggpubr)
+library(corrplot)
+library(Hmisc)
+```
+
+# Import Dataset via Environment
+```{r, warning=FALSE}
+Data <- read.csv(file = "Data.csv", skip = 1) %>%
+  rename(Participant = X,
+         Counterbalance = X.1,
+         RA = X.2) %>%
+  select(-RA, 
+         -Counterbalance, 
+         -Sociability, 
+         -Assertiveness, 
+         -Energy.Level, 
+         -Compassion, 
+         -Respectfulness, 
+         -Trust, 
+         -Organization, 
+         -Productiveness, 
+         -Responsibility, 
+         -Anxiety, 
+         -Depression, 
+         -Emotional.Volatility, 
+         -Intellectual.Curiosity, 
+         -Aesthetic.Sensitivity, 
+         -Creative.Imagination, 
+         -sensation_seeking_scale_complete,
+         -(bfi_sociable_1:bfi_original_60),
+         -(Cadillac:Volvo)) %>%
+group_by(Participant) %>%
+  summarize_if(is.numeric, .funs = mean, na.rm = TRUE) %>%
+  na.omit() %>%
+  ungroup() %>%
+  select(-Participant, -REDCap.Event.Name)
+
+# apply(X = Data, 2, is.numeric)
+```
+
+# Plot correlations
+```{r}
+DF <- cor(Data)
+RC <- rcorr(x = as.matrix(Data))
+RC$r
+flattenCorrMatrix <- function(cormat, pmat) {ut <- upper.tri(cormat)
+data.frame( row = rownames(cormat)[row(cormat)[ut]], column = rownames(cormat)[col(cormat)[ut]], cor=(cormat)[ut], p = pmat[ut] )
+}
+
+flattenCorrMatrix(RC$r, RC$P)
+
+rcorr(as.matrix(Data))
+```
+
+```{r}
+corrplot(RC$r, type = "full", p.mat = RC$P, sig.level = 0.01, insig = "blank", method = "ellipse")
+```
+
+
+```{r}
+corrplot(RC$r, type = "full", p.mat = RC$P, sig.level = c(.001, .01, .05), pch.cex = .9, insig = "label_sig", pch.col = "white", method = "color")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Sample Script running Correlation
+```{r}
+ggplot(data = Data) +
+  geom_point(mapping = aes(x = Agreeableness, y = Relax), position = "jitter")
+
+ggscatter(Data, x = "Agreeableness", y = "Relax",
+          add = "reg.line", conf.int = TRUE,
+          cor.coef = TRUE, cor.method = "pearson", poistion = "jitter")
+```
